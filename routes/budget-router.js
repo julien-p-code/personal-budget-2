@@ -78,7 +78,7 @@ budgetRouter.post('/envelopes/transfer', (req, res) => {
             message: 'Invalid target envelope id'
         });
     };
-    
+
     if (!Number.isFinite(amountNum) || amountNum <= 0) {
         return res.status(400).json({
             success: false,
@@ -100,8 +100,25 @@ budgetRouter.post('/envelopes/transfer', (req, res) => {
 // Route to modify an existing envelope.
 budgetRouter.put('/envelopes/:id', (req, res) => {
     const id = Number(req.params.id);
-    const { name, allocatedAmount } = req.body;
-    const allocatedAmountNum = Number(allocatedAmount);
+    const updates = req.body;
+
+    if (updates.name !== undefined) {
+        if (typeof updates.name !== 'string' || updates.name.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid envelope name'
+            });
+        }
+    }
+
+    if (updates.budget !== undefined) {
+        if (!Number.isFinite(updates.budget) || updates.budget < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid budget amount'
+            });
+        }
+    }
 
     if (!Number.isFinite(id) || id < 0) {
         return res.status(400).json({
@@ -110,15 +127,7 @@ budgetRouter.put('/envelopes/:id', (req, res) => {
         });
     }
 
-    if (typeof name !== 'string' || name.trim() === '' ||
-        !Number.isFinite(allocatedAmountNum) || allocatedAmountNum < 0) {
-        return res.status(400).json({
-            success: false,
-            message: 'Invalid envelope data'
-        });
-    }
-
-    const updatedEnvelope = modifyEnvelope(id, name.trim(), allocatedAmountNum);
+    const updatedEnvelope = modifyEnvelope(id, updates);
 
     return res.status(200).json({
         success: true,
