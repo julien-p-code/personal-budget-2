@@ -56,7 +56,7 @@ function createEnvelope(name, budget) {
 //////// Modify envelope /////////
 //////////////////////////////////
 
-function modifyEnvelope(id, newName, newBudget) {
+function modifyEnvelope(id, updates) {
     if (!Number.isFinite(id) || id < 0) {
         throw httpError(400, 'Invalid envelope id');
     }
@@ -67,24 +67,26 @@ function modifyEnvelope(id, newName, newBudget) {
         throw httpError(404, 'Envelope not found');
     }
 
-    if (!Number.isFinite(newBudget) || newBudget < 0) {
-        throw httpError(400, 'Invalid budget amount');
-    }
+    if(updates.budget !== undefined) {
+        if (!Number.isFinite(updates.budget) || updates.budget < 0) {
+            throw httpError(400, 'Invalid budget amount');
+        }
 
-    // Money available for THIS envelope = availableBudget + current envelope budget
-    const deltaBudget = availableBudget + envelope.budget;
-
-    if (newBudget > deltaBudget) {
+        // Money available for THIS envelope = availableBudget + current envelope budget
+        const deltaBudget = availableBudget + envelope.budget;
+        if (updates.budget > deltaBudget) {
         throw httpError(400, 'Invalid budget: budget exceeds total available budget');
+        }
+
+        // Update available budget after reallocating
+        availableBudget = deltaBudget - updates.budget;
+        envelope.budget = updates.budget;
     }
 
-    // Update available budget after reallocating
-    availableBudget = deltaBudget - newBudget;
-
-    // Mutate the existing envelope.
-    envelope.name = newName;
-    envelope.budget = newBudget;
-
+    // Update name if provided
+    if(updates.name !== undefined) {
+        envelope.name = updates.name;
+    }
     return envelope;
 };
 
