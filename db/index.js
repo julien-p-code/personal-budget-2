@@ -1,4 +1,4 @@
-const {pool} = require('pg');
+const { Pool } = require('pg');
 require('dotenv').config();
 
 //Single shared pool instance for the entire application
