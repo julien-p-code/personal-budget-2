@@ -5,7 +5,8 @@ const {
     findEnvelopeById,
     createEnvelope,
     updateEnvelope,
-    deleteEnvelope } = require('../db/envelopes');
+    deleteEnvelope
+} = require('../db/envelopes');
 
 async function getAvailableBudgetController() {
     const totalBudget = await getBudget();
@@ -19,7 +20,7 @@ async function getAvailableBudgetController() {
 //////////////////////////////////
 
 // Function to validate and return total and available budget.
-const setTotalBudget = async (num) => {
+const setTotalBudgetController = async (num) => {
     const existing = await getBudget();
     if (existing) {
         return await updateBudget(num);
@@ -123,12 +124,12 @@ async function getTotalBudgetController() {
 
 module.exports = {
     getAvailableBudgetController,
-    setTotalBudget,
+    setTotalBudgetController,
     createEnvelopeController,
     updateEnvelopeController,
     transferBetweenEnvelopesController,
     deleteEnvelopeController,
     getEnvelopesController,
     getTotalBudgetController
-}
+};
 
