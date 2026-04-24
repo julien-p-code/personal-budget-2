@@ -69,11 +69,11 @@ budgetRouter.post('/envelopes/transfer', async (req, res, next) => {
         const toIdNum = Number(toEnvelopeId);
         const amountNum = Number(amount);
 
-        if (!Number.isFinite(fromIdNum) || fromIdNum < 0) {
+        if (!Number.isFinite(fromIdNum) || fromIdNum < 1) {
             throw httpError(400, 'Invalid source envelope id');
         };
 
-        if (!Number.isFinite(toIdNum) || toIdNum < 0) {
+        if (!Number.isFinite(toIdNum) || toIdNum < 1) {
             throw httpError(400, 'Invalid target envelope id');
         };
 
@@ -101,7 +101,7 @@ budgetRouter.put('/envelopes/:id', async (req, res, next) => {
         const id = Number(req.params.id);
         const updates = req.body;
 
-        if (!Number.isFinite(id) || id < 0) {
+        if (!Number.isFinite(id) || id < 1) {
             throw httpError(400, 'Invalid envelope id');
         }
 
@@ -135,7 +135,7 @@ budgetRouter.delete('/envelopes/:id', async (req, res, next) => {
 
         const id = Number(req.params.id);
 
-        if (!Number.isFinite(id) || id < 0) {
+        if (!Number.isFinite(id) || id < 1) {
             throw httpError(400, 'Invalid envelope id');
         }
 
@@ -180,7 +180,7 @@ budgetRouter.get('/envelopes/:id', async (req, res, next) => {
     try {
         const id = Number(req.params.id);
 
-        if (!Number.isFinite(id) || id < 0) {
+        if (!Number.isFinite(id) || id < 1) {
             throw httpError(400, 'Invalid envelope id');
         }
 
