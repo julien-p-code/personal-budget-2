@@ -10,6 +10,10 @@ app.use(express.json());
 const budgetRouter = require('./routes/budget-router');
 app.use('/api/budget', budgetRouter);
 
+// Import transaction routes.
+const transactionRouter = require('./routes/transactions-router');
+app.use('/api/transactions', transactionRouter);
+
 // Error handling middleware.
 app.use(errorHandler);
 
