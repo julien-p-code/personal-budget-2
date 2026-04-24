@@ -30,28 +30,10 @@ async function deleteEnvelope(id) {
     return rows[0];
 }
 
-async function transferBetweenEnvelopes(fromId, toId, amount) {
-    const fromEnvelope = await findEnvelopeById(fromId);
-    const toEnvelope = await findEnvelopeById(toId);
-    
-    if (!fromEnvelope || !toEnvelope) {
-        throw new Error('One or both envelopes not found');
-    }
-    if (fromEnvelope.envelope_amount < amount) {
-        throw new Error('Insufficient funds in the source envelope');
-    }
-    
-    const updatedFrom = await updateEnvelope(fromId, fromEnvelope.name, Number(fromEnvelope.envelope_amount) - amount);
-    const updatedTo = await updateEnvelope(toId, toEnvelope.name, Number(toEnvelope.envelope_amount) + amount);
-    
-    return { from: updatedFrom, to: updatedTo };
-}
-
 module.exports = {
     findAllEnvelopes,
     findEnvelopeById,
     createEnvelope,
     updateEnvelope,
     deleteEnvelope,
-    transferBetweenEnvelopes
 };
