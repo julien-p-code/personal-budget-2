@@ -122,6 +122,10 @@ async function getTotalBudgetController() {
     return await getBudget();
 };
 
+async function getEnvelopeByIdController(id) {
+    return await findEnvelopeById(id);
+};
+
 module.exports = {
     getAvailableBudgetController,
     setTotalBudgetController,
@@ -130,6 +134,7 @@ module.exports = {
     transferBetweenEnvelopesController,
     deleteEnvelopeController,
     getEnvelopesController,
-    getTotalBudgetController
+    getTotalBudgetController,
+    getEnvelopeByIdController
 };
 
