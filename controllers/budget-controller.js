@@ -1,24 +1,30 @@
 const httpError = require('../errors/httpError');
+const { createBudget, getBudget, updateBudget } = require('../db/budget');
+const {
+    findAllEnvelopes,
+    findEnvelopeById,
+    createEnvelope,
+    updateEnvelope,
+    deleteEnvelope } = require('../db/envelopes');
 
-let envelopes = [];
-
-let envelopeIdCounter = 1;
-
-let totalBudget = 0;
-let availableBudget = 0;
+async function getAvailableBudgetController() {
+    const totalBudget = await getBudget();
+    const envelopes = await findAllEnvelopes();
+    const availableBudget = envelopes.reduce((sum, env) => sum + Number(env.envelope_amount), 0);
+    return Number(totalBudget.total_amount) - availableBudget;
+};
 
 //////////////////////////////////
 ////// Budget initialization /////
 //////////////////////////////////
 
 // Function to validate and return total and available budget.
-const setTotalBudget = (num) => {
-    if (!Number.isFinite(num) || num < 0) {
-        throw httpError(400, 'Invalid budget: budget must be a non-negative number');
-    } else {
-        totalBudget = num;
-        availableBudget = num;
+const setTotalBudget = async (num) => {
+    const existing = await getBudget();
+    if (existing) {
+        return await updateBudget(num);
     }
+    return await createBudget(num);
 };
 
 //////////////////////////////////
@@ -27,149 +33,102 @@ const setTotalBudget = (num) => {
 
 
 // Function to create a new budget envelope.
-function createEnvelope(name, budget) {
-    if (typeof name !== 'string' || typeof budget !== 'number' || budget < 0) {
-        throw httpError(400, 'Invalid input: expected a string for name and a non-negative number for budget');
-    };
-
-    if (budget > availableBudget) {
+async function createEnvelopeController(name, budget) {
+    const available = await getAvailableBudgetController();
+    
+    // Validate budget.
+    if (budget > available) {
         throw httpError(400, 'Invalid budget: budget exceeds total available budget');
     };
 
-    // Update available budget.
-    availableBudget -= budget;
-
     // Create a new envelope object.
-    const envelope = {
-        id: envelopeIdCounter++,
-        name: name,
-        budget: budget
-    };
-
-    // Add the new envelope to the envelopes array.
-    envelopes.push(envelope);
-
-    return envelope;
+    return await createEnvelope(name, budget);
 };
 
 //////////////////////////////////
 //////// Modify envelope /////////
 //////////////////////////////////
 
-function modifyEnvelope(id, updates) {
-    if (!Number.isFinite(id) || id < 0) {
-        throw httpError(400, 'Invalid envelope id');
-    }
+async function updateEnvelopeController(id, updates) {
+    const envelope = await findEnvelopeById(id);
 
-    // Find the existing envelope once
-    const envelope = envelopes.find(env => env.id === id);
+    // Validate envelope existence.
     if (!envelope) {
         throw httpError(404, 'Envelope not found');
     }
 
-    if(updates.budget !== undefined) {
-        if (!Number.isFinite(updates.budget) || updates.budget < 0) {
-            throw httpError(400, 'Invalid budget amount');
+    // Validate budget if amount is being updated.
+    if (updates.amount !== undefined) {
+        const available = await getAvailableBudgetController();
+        const deltaBudget = available + Number(envelope.envelope_amount);
+        if (updates.amount > deltaBudget) {
+            throw httpError(400, 'Invalid amount: amount exceeds total available budget');
         }
-
-        // Money available for THIS envelope = availableBudget + current envelope budget
-        const deltaBudget = availableBudget + envelope.budget;
-        if (updates.budget > deltaBudget) {
-        throw httpError(400, 'Invalid budget: budget exceeds total available budget');
-        }
-
-        // Update available budget after reallocating
-        availableBudget = deltaBudget - updates.budget;
-        envelope.budget = updates.budget;
     }
 
-    // Update name if provided
-    if(updates.name !== undefined) {
-        envelope.name = updates.name;
-    }
-    return envelope;
+    // Update the envelope with new values, keeping existing values if not provided.
+    const newAmount = updates.amount !== undefined ? updates.amount : Number(envelope.envelope_amount);
+    const newName = updates.name !== undefined ? updates.name : envelope.name;
+
+    return await updateEnvelope(id, newName, newAmount);
 };
 
-function transferBetweenEnvelopes(fromId, toId, amount) {
-    if (!Number.isFinite(fromId) || fromId < 0 || !Number.isFinite(toId) || toId < 0) {
-        throw httpError(400, 'Invalid envelope id');
-    }
+/////////////////////////////////////
+///// Transfer between envelopes ////
+/////////////////////////////////////
 
-    if (!Number.isFinite(amount) || amount <= 0) {
-        throw httpError(400, 'Invalid transfer amount');
-    }
+async function transferBetweenEnvelopesController(fromId, toId, amount) {
+    const fromEnvelope = await findEnvelopeById(fromId);
+    const toEnvelope = await findEnvelopeById(toId);
 
-    const fromEnvelope = envelopes.find(env => env.id === fromId);
-    const toEnvelope = envelopes.find(env => env.id === toId);
-
-    if (!fromEnvelope) {
-        throw httpError(404, 'Source envelope not found');
+    // Validate envelopes and transfer amount.    
+    if (!fromEnvelope || !toEnvelope) {
+        throw httpError(404, 'One or both envelopes not found');
     }
-    if (!toEnvelope) {
-        throw httpError(404, 'Target envelope not found');
-    }
-
-    if (fromEnvelope.budget < amount) {
+    if (Number(fromEnvelope.envelope_amount) < amount) {
         throw httpError(400, 'Insufficient funds in the source envelope');
     }
-    fromEnvelope.budget -= amount;
-    toEnvelope.budget += amount;
-
-    return {
-        fromEnvelope,
-        toEnvelope
-    };
-}
+    
+    // Perform the transfer by updating both envelopes.
+    const updatedFrom = await updateEnvelope(fromId, fromEnvelope.name, Number(fromEnvelope.envelope_amount) - amount);
+    const updatedTo = await updateEnvelope(toId, toEnvelope.name, Number(toEnvelope.envelope_amount) + amount);
+    
+    return { from: updatedFrom, to: updatedTo };
+};
 
 //////////////////////////////////
 //////// Delete envelope /////////
 //////////////////////////////////
 
-function deleteEnvelope(id) {
-    if (!Number.isFinite(id) || id < 0) {
-        throw httpError(400, 'Invalid envelope id');
-    }
-
-    const envelopeIndex = envelopes.findIndex(env => env.id === id);
-    if (envelopeIndex === -1) {
+async function deleteEnvelopeController(id) {
+    const envelope = await findEnvelopeById(id);
+    if (!envelope) {
         throw httpError(404, 'Envelope not found');
     }
 
-    const deletedEnvelope = envelopes[envelopeIndex];
-
-    // Restore its budget
-    availableBudget += deletedEnvelope.budget;
-
-    // Remove it
-    envelopes.splice(envelopeIndex, 1);
-
-    return deletedEnvelope;
+    return await deleteEnvelope(id);
 };
 
 ///////////////////////////////////
 //////////// Getters //////////////
 ///////////////////////////////////
 
-function getEnvelopes() {
-    return envelopes;
+async function getEnvelopesController() {
+    return await findAllEnvelopes();
 };
 
-function getAvailableBudget() {
-    return availableBudget;
-};
-
-function getTotalBudget() {
-    return totalBudget;
+async function getTotalBudgetController() {
+    return await getBudget();
 };
 
 module.exports = {
-    transferBetweenEnvelopes,
-    getEnvelopes,
-    getAvailableBudget,
-    getTotalBudget,
+    getAvailableBudgetController,
     setTotalBudget,
-    createEnvelope,
-    modifyEnvelope,
-    deleteEnvelope,
-};
+    createEnvelopeController,
+    updateEnvelopeController,
+    transferBetweenEnvelopesController,
+    deleteEnvelopeController,
+    getEnvelopesController,
+    getTotalBudgetController
+}
 
