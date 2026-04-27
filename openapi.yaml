@@ -1,0 +1,414 @@
+openapi: 3.0.4
+info:
+  title: Personal Budget 2 API
+  description: |
+    A RESTful backend API built with Node.js, Express, and PostgreSQL that implements a budget management system based on the envelope budgeting method, including transaction tracking.
+
+    This project was completed as part of the Codecademy Back-End Engineer Career Path and focuses on clean API design, database integration, proper error handling, and separation of concerns.
+  contact:
+    name: Julien Perret
+    email: jperret.torres@gmail.com
+    url: https://github.com/julien-p-code
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: 0.1.0
+servers:
+  - url: http://localhost:3000/api
+    description: Local development Server
+externalDocs:
+  description: GitHub repository
+  url: https://github.com/julien-p-code/personal-budget-2
+tags:
+  - name: budget
+    description: Creation and management of your budget
+  - name: envelopes
+    description: Operations about envelopes
+  - name: transactions
+    description: Operations about transactions
+paths:
+  /budget/init:
+    post:
+      tags:
+        - budget
+      summary: Initialize a budget.
+      description: Create a budget for the user.
+      operationId: initBudget
+      requestBody:
+        description: Create a budget for all envelopes
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - totalBudget
+              properties:
+                totalBudget:
+                  type: number
+                  example: 5000
+      responses:
+        '201':
+          description: Budget initialized successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    example: Budget initialized successfully
+                  totalBudget:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                        example: 1
+                      total_amount:
+                        type: number
+                        example: 5000
+                  availableBudget:
+                    type: number
+                    example: 3900
+        '400':
+          description: Invalid total budget amount.
+        '500':
+          description: Internal Server Error.
+  /budget/status:
+    get:
+      tags:
+        - budget
+      summary: Get all budget and envelopes status.
+      description: Get all envelopes, total budget and available budget.
+      operationId: getBudgetStatus
+      responses:
+        '200':
+          description: Fetch all personal budget successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  envelopes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                        name:
+                          type: string
+                        envelope_amount:
+                          type: number
+                    example:
+                      - id: 5
+                        name: "Rent"
+                        envelope_amount: "2000"
+                      - id: 6
+                        name: "Internet"
+                        envelope_amount: "120"
+                  availableBudget:
+                    type: number
+                    example: 1500
+                  totalBudget:
+                    type: number
+                    example: 5000
+        '500':
+          description: Internal Server Error.
+
+  /budget/envelopes:
+    post:
+      tags:
+        - envelopes
+      summary: Create a new envelope.
+      description: Create a new envelope for the user.
+      operationId: createEnvelope
+      requestBody:
+        description: Create a new envelope.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - allocatedAmount
+              properties:
+                name:
+                  type: string
+                  example: Grosseries
+                allocatedAmount:
+                  type: number
+                  example: 600
+      responses:
+        '201':
+          description: Envelope created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    example: Envelope created successfully
+                  envelope:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                        example: 1
+                      name:
+                        type: string
+                        example: Grosseries
+                      envelope_amount:
+                        type: number
+                        example: 600
+                  availableBudget:
+                    type: number
+                    example: 3900
+        '400':
+          description: Invalid envelope data.
+        '500':
+          description: Internal Server Error.
+    get:
+      tags:
+        - envelopes
+      summary: Fetch all existing envelopes.
+      description: Get all existing envelopes.
+      operationId: getAllEnvelopes
+      responses:
+        '200':
+          description: Get all envelopes successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  envelopes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                        name:
+                          type: string
+                        envelope_amount:
+                          type: number
+                    example:
+                      - id: 5
+                        name: "Rent"
+                        envelope_amount: "2000"
+                      - id: 6
+                        name: "Internet"
+                        envelope_amount: "120"
+        '500':
+          description: Internal Server Error.
+  /budget/envelopes/transfer:
+    post:
+      tags:
+        - envelopes
+      summary: Manage envelope money transfer.
+      description: Transfer budget between envelopes.
+      operationId: envelopeTransfer
+      requestBody:
+        description: transfer budget between two envelopes.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fromEnvelopeId
+                - toEnvelopeId
+                - amount
+              properties:
+                fromEnvelopeId:
+                  type: number
+                  example: 1
+                toEnvelopeId:
+                  type: number
+                  example: 2
+                amount:
+                  type: number
+                  example: 300
+      responses:
+        '200':
+          description: Transfer completed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    example: Transfer completed successfully
+                  fromEnvelope:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                        example: 1
+                      name:
+                        type: string
+                        example: Grosseries
+                      envelope_amount:
+                        type: number
+                        example: 100
+                  toEnvelope:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                        example: 2
+                      name:
+                        type: string
+                        example: Electricity bill
+                      envelope_amount:
+                        type: number
+                        example: 500
+                  availableBudget:
+                    type: number
+                    example: 3900
+        '400':
+          description: Invalid request (id envelopes or amount).
+        '500':
+          description: Internal Server Error.
+  /budget/envelopes/{id}:
+    put:
+      tags:
+        - envelopes
+      summary: Modify an existing envelope.
+      description: Modify an existing envelope by id.
+      operationId: updateEnvelope
+      parameters:
+        - $ref: '#/components/parameters/envelopeId'
+      requestBody:
+        description: Modify an envelope.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Car payment
+                amount:
+                  type: number
+                  example: 400
+      responses:
+        '200':
+          description: Envelope updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    example: Envelope updated successfully
+                  envelope:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                        example: 2
+                      name:
+                        type: string
+                        example: Car payment
+                      envelope_amount:
+                        type: number
+                        example: 500
+                  availableBudget:
+                    type: number
+                    example: 3900
+        '404':
+          description: Envelope Not found.
+        '400':
+          description: Invalid request (id, name or amount).
+        '500':
+          description: Internal Server Error.
+    delete:
+      tags:
+        - envelopes
+      summary: Delete an existing envelope.
+      description: Delete an existing envelope by id.
+      operationId: deleteEnvelope
+      parameters:
+        - $ref: '#/components/parameters/envelopeId'
+      responses:
+        '200':
+          description: Envelope deleted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    example: Envelope deleted successfully
+                  availableBudget:
+                    type: number
+                    example: 3900
+        '404':
+          description: Envelope Not found.
+        '400':
+          description: Invalid envelope id.
+        '500':
+          description: Internal Server Error.
+    get:
+      tags:
+        - envelopes
+      summary: Get an envelope by its id.
+      description: Get an envelope by its id.
+      operationId: getEnvelopeById
+      parameters:
+        - $ref: '#/components/parameters/envelopeId'
+      responses:
+        '200':
+          description: Fetch an envelope by its id.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  envelope:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                        example: 5
+                      name:
+                        type: string
+                        example: Insurance
+                      envelope_amount:
+                        type: number
+                        example: 800
+        '404':
+          description: Envelope Not found.
+        '500':
+          description: Internal Server Error.
+
+components:
+  parameters:
+    envelopeId:
+      name: id
+      in: path
+      required: true
+      description: Id of the Envelope
+      schema:
+        type: integer
