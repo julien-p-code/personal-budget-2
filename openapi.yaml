@@ -403,6 +403,190 @@ paths:
         '500':
           description: Internal Server Error.
 
+  /transactions:
+    post:
+      tags:
+        - transactions
+      summary: Create a transaction.
+      description: Create a transaction with recipient, transaction amount, transaction date and the envelope used for the transaction.
+      operationId: createTransaction
+      requestBody:
+        description: Create a transaction with four parameters, recipient, transaction amount, transaction date and envelope id.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipient
+                - transactionAmount
+                - transactionDate
+                - envelopeId
+              properties:
+                recipient:
+                  type: string
+                  example: "Wallmart"
+                transactionAmount:
+                  type: number
+                  example: 100
+                transactionDate:
+                  type: string                  
+                  format: date
+                  example: "2026-03-24"
+                envelopeId:
+                  type: number
+                  example: 3
+      responses:
+        '201':
+          description: Transaction created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: 
+                    type: boolean
+                  message: 
+                    type: string
+                    example: "Transaction created successfully"
+                  transaction:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                        example: 3
+                      payment_amount:
+                        type: number
+                        example: 100
+                      payment_recipient:
+                        type: string
+                        example: "Wallmart"
+                      payment_date:
+                        type: string
+                        format: date
+                        example: "2026-03-24"
+                      id_envelope:
+                        type: number
+                        example: 3
+        '400':
+          description: Invalid request (date, recipient, amount or envelope id).
+        '500':
+          description: Internal Server Error.
+  /transactions/{id}:
+    delete:
+      tags:
+        - transactions
+      summary: Delete an existing transaction.
+      description: Delete an existing transaction by id.
+      operationId: deleteTransaction
+      parameters:
+        - $ref: '#/components/parameters/transactionId'
+      responses:
+        '200':
+          description: Transaction deleted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    example: Transaction deleted successfully
+        '404':
+          description: Transaction not found.
+        '400':
+          description: Invalid transaction id.
+        '500':
+          description: Internal Server Error.
+    get:
+      tags:
+        - transactions
+      summary: Get a transaction by its id.
+      description: Get a transaction by its id.
+      operationId: getTransactionById
+      parameters:
+        - $ref: '#/components/parameters/transactionId'
+      responses:
+        '200':
+          description: Fetch a transaction by its id.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  transaction:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                        example: 3
+                      payment_amount:
+                        type: number
+                        example: 100
+                      payment_recipient:
+                        type: string
+                        example: "Wallmart"
+                      payment_date:
+                        type: string
+                        format: date
+                        example: "2026-03-24"
+                      id_envelope:
+                        type: number
+                        example: 3
+        '404':
+          description: Transaction Not found.
+        '500':
+          description: Internal Server Error. 
+  /transactions/status:
+    get:
+      tags:
+        - transactions
+      summary: Get all transactions status.
+      description: Get all transactions.
+      operationId: getTransactionsStatus
+      responses:
+        '200':
+          description: Fetch all transactions successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                        payment_amount:
+                          type: number
+                        payment_recipient:
+                          type: string
+                        payment_date:
+                          type: string
+                          format: date
+                        id_envelope:
+                          type: number
+                    example:
+                      - id: 1
+                        payment_amount: 400
+                        payment_recipient: "Music store"
+                        payment_date: "2026-06-23"
+                        id_envelope: 7
+                      - id: 2
+                        payment_amount: 400
+                        payment_recipient: "Dysney World"
+                        payment_date: "2026-08-10"
+                        id_envelope: 10
+        '500':
+          description: Internal Server Error.
+
+
 components:
   parameters:
     envelopeId:
@@ -412,3 +596,12 @@ components:
       description: Id of the Envelope
       schema:
         type: integer
+    
+    transactionId:
+      name: id
+      in: path
+      required: true
+      description: Id of the Transaction
+      schema:
+        type: integer
+  
