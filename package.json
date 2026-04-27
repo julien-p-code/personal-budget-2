@@ -13,7 +13,7 @@
     "url": "personal-budget-2"
   },
   "author": "julien-p-code",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
