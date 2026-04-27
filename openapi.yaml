@@ -16,6 +16,8 @@ info:
 servers:
   - url: http://localhost:3000/api
     description: Local development Server
+  - url: https://personal-budget-2.onrender.com/api
+    description: Production Server
 externalDocs:
   description: GitHub repository
   url: https://github.com/julien-p-code/personal-budget-2
